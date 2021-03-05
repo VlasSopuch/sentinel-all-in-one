@@ -81,49 +81,49 @@
                         "constraints": {
                             "allowedValues": [
                                 {
-                                    "label": "Office365",
-                                    "value": "Office365"
-                                },
-                                {
-                                    "label": "Azure ATP",
-                                    "value": "AzureAdvancedThreatProtection"
-                                },
-                                {
-                                    "label": "Azure AD Identity Protection",
+                                    "label": "Azure Active Directory",
                                     "value": "AzureActiveDirectory"
-                                },
-                                {
-                                    "label": "Microsoft Defender ATP",
-                                    "value": "MicrosoftDefenderAdvancedThreatProtection"
-                                },
-                                {
-                                    "label": "Azure Security Center",
-                                    "value": "AzureSecurityCenter"
-                                },
-                                {
-                                    "label": "Microsoft Cloud App Security",
-                                    "value": "MicrosoftCloudAppSecurity"
                                 },
                                 {
                                     "label": "Azure Activity",
                                     "value": "AzureActivity"
                                 },
                                 {
+                                    "label": "Azure Security Center",
+                                    "value": "AzureSecurityCenter"
+                                },
+                                {
+                                    "label": "DNS",
+                                    "value": "DNS"
+                                },                                
+                                {
+                                    "label": "Microsoft Cloud App Security",
+                                    "value": "MicrosoftCloudAppSecurity"
+                                },
+                                {
+                                    "label": "Microsoft Defender for Endpoint (Preview)",
+                                    "value": "MicrosoftDefenderAdvancedThreatProtection"
+                                },
+                                {
+                                    "label": "Microsoft Defender for Identity (Preview)",
+                                    "value": "AzureAdvancedThreatProtection"
+                                },                              
+                                {
+                                    "label": "Office 365",
+                                    "value": "Office365"
+                                },
+                                {
                                     "label": "Security Events",
                                     "value": "SecurityEvents"
                                 },
                                 {
+                                    "label": "Syslog",
+                                    "value": "Syslog"
+                                },
+                                {
                                     "label": "Windows Firewall",
                                     "value": "WindowsFirewall"
-                                },
-                                {
-                                    "label": "DNS Analytics",
-                                    "value": "DNS"
-                                },
-                                {
-                                    "label": "Linux Syslog",
-                                    "value": "Syslog"
-                                }
+                                }                               
                             ],
                             "required": true
                         },
