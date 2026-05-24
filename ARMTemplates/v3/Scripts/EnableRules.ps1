@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$ResourceGroup,
     [Parameter(Mandatory = $true)][string]$Workspace,
-    [Parameter(Mandatory = $true)][string[]]$Connectors
+    [Parameter(Mandatory = $false)][string[]]$Connectors,
+    [Parameter(Mandatory = $false)][string[]]$SeveritiesToInclude = @("Informational", "Low", "Medium", "High")
 )
 
 $context = Get-AzContext
@@ -32,106 +33,112 @@ $return = @()
 
 if ($Connectors) {
     foreach ($item in $alertRulesTemplates) {
-        switch ($item.kind) {
-            "Scheduled" {
-                foreach ($connector in $item.properties.requiredDataConnectors) {
-                    if ($connector.connectorId -in $Connectors) {
-                        #$return += $item.properties
-                        $guid = New-Guid
-                        $alertUriGuid = $alertUri + $guid + '?api-version=2022-12-01-preview'
+        #Make sure that the template's severity is one we want to include
+        if ($SeveritiesToInclude.Contains($item.properties.severity)) {
+            switch ($item.kind) {
+                "Scheduled" {
+                    foreach ($connector in $item.properties.requiredDataConnectors) {
+                        if ($connector.connectorId -in $Connectors) {
+                            #$return += $item.properties
+                            $guid = New-Guid
+                            $alertUriGuid = $alertUri + $guid + '?api-version=2022-12-01-preview'
 
-                        $properties = @{
-                            displayName           = $item.properties.displayName
-                            enabled               = $true
-                            suppressionDuration   = "PT5H"
-                            suppressionEnabled    = $false
-                            alertRuleTemplateName = $item.name
-                            description           = $item.properties.description
-                            query                 = $item.properties.query
-                            queryFrequency        = $item.properties.queryFrequency
-                            queryPeriod           = $item.properties.queryPeriod
-                            severity              = $item.properties.severity
-                            tactics               = $item.properties.tactics
-                            triggerOperator       = $item.properties.triggerOperator
-                            triggerThreshold      = $item.properties.triggerThreshold
-                            techniques            = $item.properties.techniques
-                            eventGroupingSettings = $item.properties.eventGroupingSettings
-                            templateVersion       = $item.properties.version
-                            entityMappings        = $item.properties.entityMappings
+                            $properties = @{
+                                displayName           = $item.properties.displayName
+                                enabled               = $true
+                                suppressionDuration   = "PT5H"
+                                suppressionEnabled    = $false
+                                alertRuleTemplateName = $item.name
+                                description           = $item.properties.description
+                                query                 = $item.properties.query
+                                queryFrequency        = $item.properties.queryFrequency
+                                queryPeriod           = $item.properties.queryPeriod
+                                severity              = $item.properties.severity
+                                tactics               = $item.properties.tactics
+                                triggerOperator       = $item.properties.triggerOperator
+                                triggerThreshold      = $item.properties.triggerThreshold
+                                techniques            = $item.properties.techniques
+                                eventGroupingSettings = $item.properties.eventGroupingSettings
+                                templateVersion       = $item.properties.version
+                                entityMappings        = $item.properties.entityMappings
+                            }
+
+                            $alertBody = @{}
+                            $alertBody | Add-Member -NotePropertyName kind -NotePropertyValue $item.kind -Force
+                            $alertBody | Add-Member -NotePropertyName properties -NotePropertyValue $properties
+
+                            try {
+                                Invoke-AzRestMethod -Path $alertUriGuid -Method PUT -Payload ($alertBody | ConvertTo-Json -Depth 3)
+                            }
+                            catch {
+                                Write-Host "Can't enable rule template with connectors: " $item.properties.requiredDataConnectors
+                                Write-Verbose $_
+                                Write-Error "Unable to create alert rule with error code: $($_.Exception.Message)" -ErrorAction Stop
+                            }
+
+                            break
                         }
-
-                        $alertBody = @{}
-                        $alertBody | Add-Member -NotePropertyName kind -NotePropertyValue $item.kind -Force
-                        $alertBody | Add-Member -NotePropertyName properties -NotePropertyValue $properties
-
-                        try {
-                            Invoke-AzRestMethod -Path $alertUriGuid -Method PUT -Payload ($alertBody | ConvertTo-Json -Depth 3)
-                        }
-                        catch {
-                            Write-Verbose $_
-                            Write-Error "Unable to create alert rule with error code: $($_.Exception.Message)" -ErrorAction Stop
-                        }
-
-                        break
                     }
                 }
-            }
-            "NRT" {
-                foreach ($connector in $item.properties.requiredDataConnectors) {
-                    if ($connector.connectorId -in $Connectors) {
-                        #$return += $item.properties
-                        $guid = New-Guid
-                        $alertUriGuid = $alertUri + $guid + '?api-version=2022-12-01-preview'
+                "NRT" {
+                    foreach ($connector in $item.properties.requiredDataConnectors) {
+                        if ($connector.connectorId -in $Connectors) {
+                            #$return += $item.properties
+                            $guid = New-Guid
+                            $alertUriGuid = $alertUri + $guid + '?api-version=2022-12-01-preview'
 
-                        $properties = @{
-                            displayName           = $item.properties.displayName
-                            enabled               = $true
-                            suppressionDuration   = "PT5H"
-                            suppressionEnabled    = $false
-                            alertRuleTemplateName = $item.name
-                            description           = $item.properties.description
-                            query                 = $item.properties.query
-                            severity              = $item.properties.severity
-                            tactics               = $item.properties.tactics
-                            techniques            = $item.properties.techniques
-                            eventGroupingSettings = $item.properties.eventGroupingSettings
-                            templateVersion       = $item.properties.version
-                            entityMappings        = $item.properties.entityMappings
+                            $properties = @{
+                                displayName           = $item.properties.displayName
+                                enabled               = $true
+                                suppressionDuration   = "PT5H"
+                                suppressionEnabled    = $false
+                                alertRuleTemplateName = $item.name
+                                description           = $item.properties.description
+                                query                 = $item.properties.query
+                                severity              = $item.properties.severity
+                                tactics               = $item.properties.tactics
+                                techniques            = $item.properties.techniques
+                                eventGroupingSettings = $item.properties.eventGroupingSettings
+                                templateVersion       = $item.properties.version
+                                entityMappings        = $item.properties.entityMappings
+                            }
+
+                            $alertBody = @{}
+                            $alertBody | Add-Member -NotePropertyName kind -NotePropertyValue $item.kind -Force
+                            $alertBody | Add-Member -NotePropertyName properties -NotePropertyValue $properties
+
+                            try {
+                                Invoke-AzRestMethod -Path $alertUriGuid -Method PUT -Payload ($alertBody | ConvertTo-Json -Depth 3)
+                            }
+                            catch {
+                                Write-Host "Can't enable rule template with connectors: " $item.properties.requiredDataConnectors
+                                Write-Verbose $_
+                                Write-Error "Unable to create alert rule with error code: $($_.Exception.Message)" -ErrorAction Stop
+                            }
+
+                            break
                         }
-
-                        $alertBody = @{}
-                        $alertBody | Add-Member -NotePropertyName kind -NotePropertyValue $item.kind -Force
-                        $alertBody | Add-Member -NotePropertyName properties -NotePropertyValue $properties
-
-                        try {
-                            Invoke-AzRestMethod -Path $alertUriGuid -Method PUT -Payload ($alertBody | ConvertTo-Json -Depth 3)
-                        }
-                        catch {
-                            Write-Verbose $_
-                            Write-Error "Unable to create alert rule with error code: $($_.Exception.Message)" -ErrorAction Stop
-                        }
-
-                        break
                     }
                 }
             }
         }
     
     }
+}
 
-    #####
-    #create rules from any rule templates that came from solutions
-    #####
+#####
+#create rules from any rule templates that came from solutions
+#####
 
-    $solutionURL = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01"
+$solutionURL = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01"
   
-    #We only care about those rule templates that were created by Microsoft Sentinel solutions so
-    #this query will make sure to filter out anything else as well as provide some overview data (which is not used)
-    $query = @"
+#We only care about those rule templates that were created by Microsoft Sentinel solutions so
+#this query will make sure to filter out anything else as well as provide some overview data (which is not used)
+$query = @"
     Resources 
     | where type =~ 'Microsoft.Resources/templateSpecs/versions' 
     | where tags['hidden-sentinelContentType'] =~ 'AnalyticsRule' 
-    and tags['hidden-sentinelWorkspaceId'] =~ '/subscriptions/$($subscriptionId)/resourceGroups/$($ResourceGroupName)/providers/Microsoft.OperationalInsights/workspaces/$($WorkspaceName)' 
+    and tags['hidden-sentinelWorkspaceId'] =~ '/subscriptions/$($subscriptionId)/resourceGroups/$($ResourceGroup)/providers/Microsoft.OperationalInsights/workspaces/$($Workspace)' 
     | extend version = name 
     | extend parsed_version = parse_version(version) 
     | extend resources = parse_json(parse_json(parse_json(properties).template).resources) 
@@ -141,16 +148,33 @@ if ($Connectors) {
     | project contentId, version, properties
 "@
 
-    $body = @{
-        "subscriptions" = @($SubscriptionId)
-        "query"         = $query
-    }
+$body = @{
+    "subscriptions" = @($SubscriptionId)
+    "query"         = $query
+}
 
-    #Load all the rule templates from solutions
-    $results = Invoke-AzRestMethod -Path $solutionURL -Method POST -Payload ($body | ConvertTo-Json -EnumAsStrings -Depth 5)
+$azureProfile = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile
+$profileClient = New-Object -TypeName Microsoft.Azure.Commands.ResourceManager.Common.RMProfileClient -ArgumentList ($azureProfile)
+$token = $profileClient.AcquireAccessToken($context.Subscription.TenantId)
+$authHeader = @{
+    'Content-Type'  = 'application/json'
+    'Authorization' = 'Bearer ' + $token.AccessToken
+}
 
-    #Iterate through all the rule templates
-    foreach ($result in $results.data) {
+#Load all the rule templates from solutions
+$results = Invoke-RestMethod -Uri $solutionURL -Method POST -Headers $authHeader -Body ($body | ConvertTo-Json -EnumsAsStrings -Depth 5)
+Write-Host "results..." $results
+
+
+#Iterate through all the rule templates
+foreach ($result in $results.data) {
+    #Make sure that the template's severity is one we want to include
+    $severity = $result.properties.template.resources.properties.severity[0]
+    Write-Host "Severity is... " $severity " of type " $severity.GetType()
+    Write-Host "Severities to include..." $SeveritiesToInclude
+    Write-Host "condition is..." $SeveritiesToInclude.Contains($severity)   
+    if ($SeveritiesToInclude.Contains($severity)) {
+        Write-Host "Enabling solution rule template... " $result.properties.template.resources.properties.displayName
         #Get to the actual template data
         $template = $result.properties.template.resources.properties
         $kind = $result.properties.template.resources.kind
@@ -271,7 +295,7 @@ if ($Connectors) {
             $alertUriGuid = $alertUri + $guid + '?api-version=2022-12-01-preview'
 
             try {
-                Invoke-AzRestMethod -Path $alertUriGuid -Method PUT -Payload ($body | ConvertTo-Json -EnumAsStrings -Depth 5)
+                Invoke-AzRestMethod -Path $alertUriGuid -Method PUT -Payload ($body | ConvertTo-Json -EnumsAsStrings -Depth 5)
             }
             catch {
                 #Most likely any errors are due to the rule template having errors, typically in the query
@@ -280,5 +304,6 @@ if ($Connectors) {
             }
         }
     }
+}
 
-    return $return
+return $return
